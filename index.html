@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MedRev">
+<title>MedRev v2 – MRCOG & PGIM Study Aid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══ CSS VARIABLES ═══ */
+:root {
+  --bg:#07111f;--surface:#0e1f35;--surface2:#142840;--surface3:#1a3150;
+  --accent:#3b9eff;--accent2:#00d4aa;--accent3:#ff6b6b;--accent4:#f7c948;
+  --text:#e8f0fe;--text2:#8faac8;--text3:#4d6a8a;
+  --border:rgba(59,158,255,0.15);--radius:16px;--radius-sm:10px;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Sora',sans-serif;color:var(--text);}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.bg-mesh::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(59,158,255,0.08) 0%,transparent 70%);top:-200px;right:-200px;animation:bgFloat 12s ease-in-out infinite;}
+.bg-mesh::after{content:'';position:absolute;width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,170,0.06) 0%,transparent 70%);bottom:-150px;left:-150px;animation:bgFloat 16s ease-in-out infinite reverse;}
+@keyframes bgFloat{0%,100%{transform:translate(0,0);}50%{transform:translate(30px,-40px);}}
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 0 80px;display:none;}
+.screen.active{display:block;}
+.screen::-webkit-scrollbar{width:3px;}
+.screen::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;}
+/* HEADER */
+.app-header{padding:52px 20px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;background:linear-gradient(to bottom,var(--bg) 80%,transparent);}
+.app-header h1{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.app-header .subtitle{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.header-badge{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--accent);font-family:'JetBrains Mono',monospace;}
+/* SYNC STATUS */
+.sync-pill{display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 10px;font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;cursor:pointer;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+.sync-dot.synced{background:var(--accent2);}
+.sync-dot.syncing{background:var(--accent4);animation:pulse 1s infinite;}
+.sync-dot.error{background:var(--accent3);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+/* NAV */
+.nav-bar{height:70px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 10px;position:sticky;bottom:0;z-index:100;flex-shrink:0;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 14px;border-radius:12px;cursor:pointer;transition:all 0.2s;flex:1;}
+.nav-item.active{background:rgba(59,158,255,0.12);}
+.nav-item svg{width:22px;height:22px;stroke:var(--text3);fill:none;stroke-width:1.8;transition:stroke 0.2s;}
+.nav-item.active svg{stroke:var(--accent);}
+.nav-item span{font-size:10px;color:var(--text3);font-weight:500;transition:color 0.2s;}
+.nav-item.active span{color:var(--accent);}
+.nav-badge{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:var(--accent3);border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;}
+.nav-item{position:relative;}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:0 16px 12px;transition:transform 0.15s;}
+.card:active{transform:scale(0.98);}
+.card-sm{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--radius-sm);padding:12px 20px;font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:active{background:#2980e0;transform:scale(0.97);}
+.btn-success{background:var(--accent2);color:#07111f;}
+.btn-danger{background:var(--accent3);color:#fff;}
+.btn-warn{background:var(--accent4);color:#07111f;}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
+.btn-full{width:100%;display:flex;}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:8px;}
+/* TAGS */
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.tag-obs{background:rgba(59,158,255,0.15);color:var(--accent);}
+.tag-gyn{background:rgba(0,212,170,0.15);color:var(--accent2);}
+.tag-other{background:rgba(247,201,72,0.15);color:var(--accent4);}
+.tag-due{background:rgba(255,107,107,0.15);color:var(--accent3);}
+.tag-done{background:rgba(0,212,170,0.1);color:var(--accent2);}
+.tag-new{background:rgba(247,201,72,0.1);color:var(--accent4);}
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.5s ease;}
+/* HOME */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 12px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;}
+.stat-num{font-size:28px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.stat-label{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:0.5px;}
+.stat-num.blue{color:var(--accent);}
+.stat-num.green{color:var(--accent2);}
+.stat-num.red{color:var(--accent3);}
+.stat-num.yellow{color:var(--accent4);}
+.due-list{padding:0 16px;}
+.due-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;}
+.due-item:active{transform:scale(0.98);}
+.due-item-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.due-item-body{flex:1;min-width:0;}
+.due-item-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.due-item-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.section-title{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:2px;text-transform:uppercase;padding:16px 16px 8px;}
+/* STREAK */
+.streak-bar{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin:0 16px 12px;}
+.streak-icon{font-size:28px;}
+.streak-num{font-size:22px;font-weight:700;color:var(--accent4);font-family:'JetBrains Mono',monospace;}
+.streak-label{font-size:11px;color:var(--text3);}
+/* NOTIF BANNER */
+.notif-banner{background:rgba(59,158,255,0.1);border:1px solid rgba(59,158,255,0.3);border-radius:var(--radius-sm);padding:14px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;}
+.notif-text{flex:1;font-size:12px;color:var(--text2);line-height:1.4;}
+.notif-btn{font-size:11px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-family:'Sora',sans-serif;font-weight:600;white-space:nowrap;}
+/* GOOGLE AUTH BANNER */
+.gdrive-banner{background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.25);border-radius:var(--radius-sm);padding:14px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;}
+.gdrive-banner svg{flex-shrink:0;}
+/* TOPICS */
+.search-bar{margin:0 16px 12px;position:relative;}
+.search-bar input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px 12px 44px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;}
+.search-bar input:focus{border-color:var(--accent);}
+.search-bar input::placeholder{color:var(--text3);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);}
+.category-tabs{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;}
+.category-tabs::-webkit-scrollbar{display:none;}
+.cat-tab{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--text3);border:1px solid transparent;transition:all 0.2s;}
+.cat-tab.active{background:rgba(59,158,255,0.15);color:var(--accent);border-color:rgba(59,158,255,0.3);}
+.topic-group{margin:0 16px 8px;}
+.group-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px;cursor:pointer;}
+.group-title{font-size:14px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:8px;}
+.group-count{font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 8px;border-radius:10px;}
+.group-arrow{transition:transform 0.2s;color:var(--text3);}
+.group-arrow.open{transform:rotate(90deg);}
+.topic-list{display:none;flex-direction:column;gap:6px;padding-bottom:8px;}
+.topic-list.open{display:flex;}
+.topic-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;}
+.topic-item:active{transform:scale(0.98);}
+.topic-check{width:22px;height:22px;border-radius:6px;border:2px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;font-size:12px;}
+.topic-check.studied{background:var(--accent2);border-color:var(--accent2);}
+.topic-check.due{background:var(--accent3);border-color:var(--accent3);}
+.topic-body{flex:1;min-width:0;}
+.topic-name{font-size:13px;font-weight:500;}
+.topic-meta{font-size:11px;color:var(--text3);margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+/* FLASHCARDS */
+.fc-header{padding:16px 20px;display:flex;align-items:center;gap:12px;}
+.fc-back-btn{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.fc-title{font-size:16px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fc-counter{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text3);flex-shrink:0;}
+.flashcard-container{padding:0 16px;height:320px;perspective:1200px;cursor:pointer;}
+.flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);}
+.flashcard.flipped{transform:rotateY(180deg);}
+.fc-face{position:absolute;inset:0;border-radius:var(--radius);backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;overflow:hidden;}
+.fc-front{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);}
+.fc-back{background:linear-gradient(135deg,rgba(59,158,255,0.1),rgba(0,212,170,0.08));border:1px solid rgba(59,158,255,0.3);transform:rotateY(180deg);}
+.fc-label{font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:2px;color:var(--text3);margin-bottom:12px;text-transform:uppercase;}
+.fc-content{font-size:15px;font-weight:600;line-height:1.6;max-height:200px;overflow-y:auto;}
+.fc-hint{font-size:11px;color:var(--text3);margin-top:12px;}
+.fc-rating{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 16px;}
+.rating-btn{padding:12px 6px;border-radius:10px;border:none;font-family:'Sora',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.rating-btn:active{transform:scale(0.95);}
+.rating-btn .r-num{font-size:16px;font-family:'JetBrains Mono',monospace;}
+.r0{background:rgba(255,107,107,0.2);color:var(--accent3);}
+.r1{background:rgba(255,140,0,0.2);color:#ff8c00;}
+.r2{background:rgba(59,158,255,0.2);color:var(--accent);}
+.r3{background:rgba(0,212,170,0.2);color:var(--accent2);}
+/* DECK VIEW */
+.fc-deck-select{padding:0 16px;}
+.deck-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;}
+.deck-card:active{transform:scale(0.98);}
+.deck-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.deck-name{font-size:14px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.deck-meta{display:flex;gap:10px;margin-top:10px;}
+.deck-stat{font-size:11px;color:var(--text3);}
+.deck-stat span{color:var(--text);font-weight:600;}
+/* GROUP SECTION in decks */
+.deck-group-header{padding:8px 0 4px;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+/* QUALITY GRID */
+.quality-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 0 4px;}
+.quality-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;cursor:pointer;transition:all 0.15s;text-align:center;}
+.quality-card:active{transform:scale(0.96);}
+.quality-card .q-score{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.quality-card .q-label{font-size:11px;color:var(--text2);font-weight:600;}
+.quality-card .q-desc{font-size:10px;color:var(--text3);margin-top:3px;}
+.q0{border-color:rgba(255,107,107,0.4);}.q0 .q-score{color:var(--accent3);}
+.q1{border-color:rgba(255,140,0,0.4);}.q1 .q-score{color:#ff8c00;}
+.q2{border-color:rgba(255,220,80,0.4);}.q2 .q-score{color:var(--accent4);}
+.q3{border-color:rgba(100,200,255,0.4);}.q3 .q-score{color:#64c8ff;}
+.q4{border-color:rgba(59,158,255,0.4);}.q4 .q-score{color:var(--accent);}
+.q5{border-color:rgba(0,212,170,0.4);}.q5 .q-score{color:var(--accent2);}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:flex-end;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px 20px 40px;width:100%;animation:slideUp 0.3s ease;max-height:90vh;overflow-y:auto;}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.modal-handle{width:40px;height:4px;background:var(--surface3);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--text3);margin-bottom:18px;}
+.modal-actions{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+/* FORMS */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;color:var(--text3);margin-bottom:6px;display:block;letter-spacing:0.5px;text-transform:uppercase;}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+textarea.form-input{min-height:80px;resize:none;line-height:1.5;}
+.form-select{-webkit-appearance:none;appearance:none;}
+/* SCHEDULE */
+.schedule-day{margin:0 16px 12px;}
+.schedule-day-label{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3);padding:8px 0 6px;letter-spacing:1px;text-transform:uppercase;}
+.sched-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.sched-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+/* SETTINGS */
+.settings-section{margin:0 16px 20px;}
+.settings-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:2px;text-transform:uppercase;padding:16px 0 10px;}
+.settings-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;cursor:pointer;}
+.settings-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.settings-body{flex:1;}
+.settings-name{font-size:14px;font-weight:600;}
+.settings-desc{font-size:11px;color:var(--text3);margin-top:3px;}
+.settings-arrow{color:var(--text3);}
+/* TOAST */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:13px;z-index:300;opacity:0;transition:all 0.3s;white-space:nowrap;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(7,17,31,0.85);z-index:400;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+.loading-overlay.show{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid var(--surface2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--text2);}
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.fade-in{animation:fadeIn 0.25s ease;}
+/* PROMPT BOX */
+.prompt-box{background:var(--surface2);border:1px solid rgba(0,212,170,0.3);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.7;font-family:'JetBrains Mono',monospace;white-space:pre-wrap;word-break:break-word;}
+.copy-btn{background:rgba(0,212,170,0.15);color:var(--accent2);border:1px solid rgba(0,212,170,0.3);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif;width:100%;margin-top:8px;}
+/* VERSION BADGE */
+.version-badge{text-align:center;padding:20px;font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+<div id="app">
+
+<!-- ══ HOME SCREEN ══ -->
+<div id="screen-home" class="screen active">
+  <div class="app-header">
+    <div>
+      <h1>MedRev</h1>
+      <div class="subtitle">MRCOG &amp; PGIM · v2.0</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-pill" id="syncPill" onclick="manualSync()">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncLabel">—</span>
+      </div>
+      <div class="header-badge" id="todayDate">—</div>
+    </div>
+  </div>
+  <div id="notifBanner" class="notif-banner" style="display:none">
+    <svg width="20" height="20" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+    <div class="notif-text">Enable notifications for daily review reminders</div>
+    <button class="notif-btn" onclick="requestNotifPermission()">Enable</button>
+  </div>
+  <div id="gdriveSigninBanner" class="gdrive-banner" style="display:none">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.3 2.841A1 1 0 007.2 2h9.6a1 1 0 01.9.559L22 10H2L6.3 2.841z" fill="rgba(0,212,170,0.5)"/><path d="M2 10l4 8h12l4-8H2z" fill="rgba(0,212,170,0.3)"/><path d="M10 10l-4 8M14 10l4 8M2 10h20" stroke="var(--accent2)" stroke-width="1.5"/></svg>
+    <div class="notif-text" style="color:var(--accent2)"><strong>Sign in with Google</strong> to sync data across devices &amp; back up to Google Drive + Sheets</div>
+    <button class="notif-btn" style="background:var(--accent2);color:#07111f" onclick="signInGoogle()">Sign In</button>
+  </div>
+  <div class="streak-bar">
+    <div class="streak-icon">🔥</div>
+    <div style="flex:1">
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-label">Day streak</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:var(--text3)">Today</div>
+      <div style="font-size:18px;font-weight:700;color:var(--accent2);font-family:'JetBrains Mono',monospace" id="studiedToday">0</div>
+    </div>
+    <div style="text-align:right;margin-left:12px">
+      <div style="font-size:11px;color:var(--text3)">Exam</div>
+      <div style="font-size:16px;font-weight:700;color:var(--accent4);font-family:'JetBrains Mono',monospace" id="daysToExam">—</div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num blue" id="stat-total">0</div><div class="stat-label">TOPICS</div></div>
+    <div class="stat-card"><div class="stat-num red" id="stat-due">0</div><div class="stat-label">DUE TODAY</div></div>
+    <div class="stat-card"><div class="stat-num green" id="stat-mastered">0</div><div class="stat-label">MASTERED</div></div>
+    <div class="stat-card"><div class="stat-num yellow" id="stat-cards">0</div><div class="stat-label">FLASHCARDS</div></div>
+  </div>
+  <div style="padding:0 16px 12px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:12px;color:var(--text3)">Overall Progress</span>
+      <span style="font-size:12px;color:var(--accent);font-family:'JetBrains Mono',monospace" id="progressPct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <div class="section-title">Due for Review</div>
+  <div class="due-list" id="dueList"></div>
+  <div class="section-title">Upcoming</div>
+  <div class="due-list" id="upcomingList"></div>
+</div>
+
+<!-- ══ TOPICS SCREEN ══ -->
+<div id="screen-topics" class="screen">
+  <div class="app-header">
+    <div><h1>Topics</h1><div class="subtitle">MARK &amp; SCHEDULE</div></div>
+    <button class="btn btn-sm btn-ghost" onclick="showAddTopicModal()">+ Add</button>
+  </div>
+  <div class="search-bar">
+    <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="search" id="topicSearch" placeholder="Search topics…" oninput="filterTopics(this.value)">
+  </div>
+  <div class="category-tabs" id="catTabs">
+    <div class="cat-tab active" onclick="filterCat('all',this)">All</div>
+    <div class="cat-tab" onclick="filterCat('obs',this)">Obstetrics</div>
+    <div class="cat-tab" onclick="filterCat('gyn',this)">Gynaecology</div>
+    <div class="cat-tab" onclick="filterCat('other',this)">Other</div>
+    <div class="cat-tab" onclick="filterCat('due',this)">Due</div>
+    <div class="cat-tab" onclick="filterCat('new',this)">New</div>
+  </div>
+  <div id="topicsContainer"></div>
+</div>
+
+<!-- ══ FLASHCARDS SCREEN ══ -->
+<div id="screen-flash" class="screen">
+  <div id="flashDeckView">
+    <div class="app-header">
+      <div><h1>Flashcards</h1><div class="subtitle">ACTIVE RECALL</div></div>
+      <button class="btn btn-sm btn-ghost" onclick="showAddCardView()">+ Card</button>
+    </div>
+    <div class="category-tabs" id="deckCatTabs">
+      <div class="cat-tab active" onclick="filterDeckCat('all',this)">All Decks</div>
+      <div class="cat-tab" onclick="filterDeckCat('obs',this)">Obstetrics</div>
+      <div class="cat-tab" onclick="filterDeckCat('gyn',this)">Gynaecology</div>
+      <div class="cat-tab" onclick="filterDeckCat('other',this)">Other</div>
+      <div class="cat-tab" onclick="filterDeckCat('due',this)">Due</div>
+    </div>
+    <div class="fc-deck-select" id="deckList"></div>
+    <div class="section-title">Claude AI → Add Cards</div>
+    <div style="padding:0 16px 16px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px;">📋 Copy this prompt into Claude when making notes</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.5">Paste this at the end of any topic study prompt. Claude will generate 20 PGIM-focused cards and save them to your Google Drive automatically.</div>
+        <div class="prompt-box" id="claudePromptBox">Loading prompt…</div>
+        <button class="copy-btn" onclick="copyClaudePrompt()">📋 Copy Prompt to Clipboard</button>
+        <div style="margin-top:10px;font-size:11px;color:var(--text3);line-height:1.5">💡 After Claude generates the JSON, tap <strong style="color:var(--accent2)">Import from Drive</strong> below to sync cards instantly</div>
+        <button class="btn btn-success btn-full btn-sm" style="margin-top:10px" onclick="importCardsFromDrive()">↓ Import Cards from Drive</button>
+      </div>
+    </div>
+  </div>
+  <div id="flashStudyView" style="display:none">
+    <div class="fc-header">
+      <div class="fc-back-btn" onclick="exitFlashStudy()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></div>
+      <div class="fc-title" id="fcDeckTitle">—</div>
+      <div class="fc-counter" id="fcCounter">0/0</div>
+    </div>
+    <div style="padding:0 16px 8px;"><div class="progress-bar"><div class="progress-fill" id="fcProgress" style="width:0%"></div></div></div>
+    <div class="flashcard-container" id="flashcardWrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="fc-face fc-front"><div class="fc-label">Question</div><div class="fc-content" id="fcFront">Tap to start</div><div class="fc-hint">Tap card to reveal answer</div></div>
+        <div class="fc-face fc-back"><div class="fc-label">Answer</div><div class="fc-content" id="fcBack">—</div></div>
+      </div>
+    </div>
+    <div id="fcRatingWrap" style="display:none">
+      <div style="text-align:center;padding:8px 16px 2px;font-size:12px;color:var(--text3)">How well did you recall?</div>
+      <div class="fc-rating">
+        <button class="rating-btn r0" onclick="rateCard(0)"><span class="r-num">0</span>Blackout</button>
+        <button class="rating-btn r1" onclick="rateCard(1)"><span class="r-num">1</span>Wrong</button>
+        <button class="rating-btn r2" onclick="rateCard(2)"><span class="r-num">2</span>Hard</button>
+        <button class="rating-btn r3" onclick="rateCard(3)"><span class="r-num">3</span>Good</button>
+      </div>
+    </div>
+    <div id="fcFlipHint" style="text-align:center;padding:12px;font-size:12px;color:var(--text3)">Tap card to flip · Swipe left/right to skip</div>
+  </div>
+  <div id="flashAddView" style="display:none">
+    <div class="fc-header">
+      <div class="fc-back-btn" onclick="exitAddCard()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></div>
+      <div class="fc-title">New Flashcard</div>
+    </div>
+    <div style="padding:0 16px">
+      <div class="form-group"><label class="form-label">Topic / Deck</label><select class="form-input form-select" id="newCardDeck"></select></div>
+      <div class="form-group"><label class="form-label">Question (Front)</label><textarea class="form-input" id="newCardFront" placeholder="e.g. What are the 4 T's of PPH?"></textarea></div>
+      <div class="form-group"><label class="form-label">Answer (Back)</label><textarea class="form-input" id="newCardBack" placeholder="e.g. Tone 70%, Trauma 20%, Tissue 10%, Thrombin 1%"></textarea></div>
+      <button class="btn btn-primary btn-full" onclick="saveNewCard()">Save Flashcard</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCHEDULE SCREEN ══ -->
+<div id="screen-schedule" class="screen">
+  <div class="app-header"><div><h1>Schedule</h1><div class="subtitle">SPACED REPETITION CALENDAR</div></div></div>
+  <div id="scheduleContainer" style="padding-bottom:20px;"></div>
+</div>
+
+<!-- ══ SETTINGS SCREEN ══ -->
+<div id="screen-settings" class="screen">
+  <div class="app-header"><div><h1>Settings</h1><div class="subtitle">SYNC · BACKUP · DATA</div></div></div>
+  <!-- Google Account -->
+  <div class="settings-section">
+    <div class="settings-title">Google Account</div>
+    <div id="googleAccountCard" class="card" style="cursor:default">
+      <div id="googleSignedOut" style="text-align:center;padding:8px 0">
+        <div style="font-size:32px;margin-bottom:12px">☁️</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Not signed in</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.5">Sign in to sync across devices, back up to Google Drive &amp; Sheets</div>
+        <button class="btn btn-success btn-full" onclick="signInGoogle()">Sign in with Google</button>
+      </div>
+      <div id="googleSignedIn" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <img id="googleAvatar" src="" width="44" height="44" style="border-radius:50%;border:2px solid var(--accent2)" onerror="this.style.display='none'">
+          <div>
+            <div style="font-size:14px;font-weight:600" id="googleName">—</div>
+            <div style="font-size:11px;color:var(--text3)" id="googleEmail">—</div>
+          </div>
+          <div class="sync-pill" id="syncPill2" style="margin-left:auto" onclick="manualSync()">
+            <div class="sync-dot" id="syncDot2"></div>
+            <span id="syncLabel2">—</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px" id="lastSyncTime">Last sync: never</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" onclick="manualSync()" style="flex:1">↑↓ Sync Now</button>
+          <button class="btn btn-ghost btn-sm" onclick="openSheets()" style="flex:1">📊 View Sheets</button>
+          <button class="btn btn-danger btn-sm" onclick="signOutGoogle()" style="flex:1">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Data Management -->
+  <div class="settings-section">
+    <div class="settings-title">Data Management</div>
+    <div class="settings-item" onclick="exportData()">
+      <div class="settings-icon" style="background:rgba(59,158,255,0.1)">📤</div>
+      <div class="settings-body"><div class="settings-name">Export Backup</div><div class="settings-desc">Download all data as JSON file</div></div>
+      <svg class="settings-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+    <div class="settings-item" onclick="document.getElementById('importFile').click()">
+      <div class="settings-icon" style="background:rgba(0,212,170,0.1)">📥</div>
+      <div class="settings-body"><div class="settings-name">Import Backup</div><div class="settings-desc">Restore from JSON backup file</div></div>
+      <svg class="settings-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    <div class="settings-item" onclick="importCardsFromDrive()">
+      <div class="settings-icon" style="background:rgba(0,212,170,0.1)">🃏</div>
+      <div class="settings-body"><div class="settings-name">Import Cards from Drive</div><div class="settings-desc">Pull Claude-generated flashcards from medrev_cards.json</div></div>
+      <svg class="settings-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+  </div>
+  <!-- App Info -->
+  <div class="settings-section">
+    <div class="settings-title">App Info</div>
+    <div class="settings-item" onclick="showPromptHelp()">
+      <div class="settings-icon" style="background:rgba(247,201,72,0.1)">🤖</div>
+      <div class="settings-body"><div class="settings-name">Claude AI Prompt</div><div class="settings-desc">Copy prompt to generate flashcards from Claude</div></div>
+      <svg class="settings-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+    </div>
+  </div>
+  <div class="version-badge">MedRev v2.0 · MRCOG Part 2&amp;3 · PGIM Part 2<br>SM-2 Algorithm · Google Drive Sync</div>
+</div>
+
+<!-- NAV BAR -->
+<nav class="nav-bar">
+  <div class="nav-item active" id="nav-home" onclick="showScreen('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Home</span>
+  </div>
+  <div class="nav-item" id="nav-topics" onclick="showScreen('topics')">
+    <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    <span>Topics</span>
+  </div>
+  <div class="nav-item" id="nav-flash" onclick="showScreen('flash')">
+    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <span>Cards</span>
+  </div>
+  <div class="nav-item" id="nav-schedule" onclick="showScreen('schedule')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Schedule</span>
+  </div>
+  <div class="nav-item" id="nav-settings" onclick="showScreen('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    <span>Settings</span>
+  </div>
+</nav>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="reviewModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="reviewModalTitle">Review Topic</div>
+    <div class="modal-sub" id="reviewModalSub">Rate your recall (SM-2)</div>
+    <div class="quality-grid" id="qualityGrid"></div>
+    <div class="modal-actions"><button class="btn btn-ghost btn-full" onclick="closeModal('reviewModal')">Cancel</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="addTopicModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add Custom Topic</div>
+    <div class="modal-sub">Add a topic not in the default list</div>
+    <div class="form-group"><label class="form-label">Topic Name</label><input class="form-input" id="newTopicName" placeholder="e.g. Obstetric Fistula"></div>
+    <div class="form-group"><label class="form-label">Category</label>
+      <select class="form-input form-select" id="newTopicCat">
+        <option value="obs">Obstetrics</option><option value="gyn">Gynaecology</option><option value="other">Other / Governance</option>
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Group / Subgroup</label><input class="form-input" id="newTopicGroup" placeholder="e.g. Obstetric Emergencies"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" onclick="saveNewTopic()">Add Topic</button>
+      <button class="btn btn-ghost btn-full" onclick="closeModal('addTopicModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="topicStartModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="topicStartTitle">Study Topic</div>
+    <div class="modal-sub" id="topicStartSub">—</div>
+    <div id="topicStartMeta" style="margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" id="topicStartStudied">Rate My Recall (SM-2)</button>
+      <button class="btn btn-ghost btn-full" onclick="closeModal('topicStartModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="promptHelpModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Claude AI Flashcard Prompt</div>
+    <div class="modal-sub">Copy &amp; paste this into your Claude study session</div>
+    <div class="prompt-box" id="promptHelpBox">—</div>
+    <button class="copy-btn" onclick="copyClaudePrompt()">📋 Copy to Clipboard</button>
+    <div style="margin-top:12px;font-size:12px;color:var(--text3);line-height:1.6">
+      <strong style="color:var(--text2)">How to use:</strong><br>
+      1. Ask Claude to summarize any O&amp;G topic<br>
+      2. Paste this prompt at the end<br>
+      3. Claude generates 20 PGIM-focused cards as JSON<br>
+      4. Claude saves to your Google Drive automatically<br>
+      5. Tap "Import Cards from Drive" in Settings
+    </div>
+    <div class="modal-actions"><button class="btn btn-ghost btn-full" onclick="closeModal('promptHelpModal')">Close</button></div>
+  </div>
+</div>
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Syncing…</div>
+</div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// APP VERSION & CONSTANTS
+// ═══════════════════════════════════════════════════════════════
+const APP_VERSION = '2.0';
+const EXAM_DATE = '2025-08-15'; // PGIM August exam - update as needed
+const GDRIVE_FILE_NAME = 'medrev_data.json';
+const GDRIVE_CARDS_FILE = 'medrev_cards.json';
+const GSHEETS_NAME = 'MedRev Study Log';
+// IMPORTANT: Replace with your actual Google OAuth Client ID from console.cloud.google.com
+const GOOGLE_CLIENT_ID = '88425153914-v8ol910dc32b0q1rcle99hob1nathh8r.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+
+// ═══════════════════════════════════════════════════════════════
+// DEFAULT TOPICS (complete curriculum)
+// ═══════════════════════════════════════════════════════════════
+const DEFAULT_TOPICS = [
+  {id:'obs_001',cat:'obs',group:'Antenatal Care',name:'Pre-conceptional counselling'},
+  {id:'obs_002',cat:'obs',group:'Antenatal Care',name:'Routine antenatal care'},
+  {id:'obs_003',cat:'obs',group:'Antenatal Care',name:'Antepartum fetal surveillance'},
+  {id:'obs_004',cat:'obs',group:'Early Pregnancy Problems',name:'Miscarriages'},
+  {id:'obs_005',cat:'obs',group:'Early Pregnancy Problems',name:'Recurrent Pregnancy Loss (RPL)'},
+  {id:'obs_006',cat:'obs',group:'Early Pregnancy Problems',name:'Ectopic pregnancy'},
+  {id:'obs_007',cat:'obs',group:'Early Pregnancy Problems',name:'Gestational Trophoblastic Disease (GTD)'},
+  {id:'obs_008',cat:'obs',group:'Early Pregnancy Problems',name:'Nausea/Vomiting & Hyperemesis Gravidarum'},
+  {id:'obs_009',cat:'obs',group:'Labour & Delivery',name:'Physiology and Mechanism of labour'},
+  {id:'obs_010',cat:'obs',group:'Labour & Delivery',name:'Induction of labour'},
+  {id:'obs_011',cat:'obs',group:'Labour & Delivery',name:'Intrapartum care'},
+  {id:'obs_012',cat:'obs',group:'Labour & Delivery',name:'CTG interpretation'},
+  {id:'obs_013',cat:'obs',group:'Labour & Delivery',name:'Fetal Blood Sampling (FBS)'},
+  {id:'obs_014',cat:'obs',group:'Labour & Delivery',name:'STAN – ST waveform analysis'},
+  {id:'obs_015',cat:'obs',group:'Labour & Delivery',name:'Abnormal / Dysfunctional labour'},
+  {id:'obs_016',cat:'obs',group:'Labour & Delivery',name:'Normal postpartum care'},
+  {id:'obs_017',cat:'obs',group:'Labour & Delivery',name:'Malposition and Malpresentation'},
+  {id:'obs_018',cat:'obs',group:'Labour & Delivery',name:'Obstetric analgesia'},
+  {id:'obs_019',cat:'obs',group:'Labour & Delivery',name:'Assisted vaginal delivery'},
+  {id:'obs_020',cat:'obs',group:'Labour & Delivery',name:'Episiotomy and Perineal tears'},
+  {id:'obs_021',cat:'obs',group:'Labour & Delivery',name:'Breech – ECV'},
+  {id:'obs_022',cat:'obs',group:'Labour & Delivery',name:'Breech delivery'},
+  {id:'obs_023',cat:'obs',group:'Labour & Delivery',name:'VBAC'},
+  {id:'obs_024',cat:'obs',group:'Labour & Delivery',name:'Caesarean section'},
+  {id:'obs_025',cat:'obs',group:'Preterm',name:'Preterm Labour (PTL)'},
+  {id:'obs_026',cat:'obs',group:'Preterm',name:'PTL prevention'},
+  {id:'obs_027',cat:'obs',group:'Preterm',name:'PROM & PPROM'},
+  {id:'obs_028',cat:'obs',group:'Preterm',name:'Intrauterine Fetal Death (IUFD)'},
+  {id:'obs_029',cat:'obs',group:'Fetal Medicine',name:'Reduced Fetal Movements'},
+  {id:'obs_030',cat:'obs',group:'Fetal Medicine',name:'Prenatal testing'},
+  {id:'obs_031',cat:'obs',group:'Fetal Medicine',name:'Antenatal Ultrasound'},
+  {id:'obs_032',cat:'obs',group:'Fetal Medicine',name:'Fetal anomalies'},
+  {id:'obs_033',cat:'obs',group:'Fetal Medicine',name:'Fetal Growth Restriction (FGR)'},
+  {id:'obs_034',cat:'obs',group:'Fetal Medicine',name:'Fetal macrosomia'},
+  {id:'obs_035',cat:'obs',group:'Fetal Medicine',name:'Multiple Pregnancies'},
+  {id:'obs_036',cat:'obs',group:'Fetal Medicine',name:'Fetal infections'},
+  {id:'obs_037',cat:'obs',group:'Fetal Medicine',name:'Anti-D prophylaxis'},
+  {id:'obs_038',cat:'obs',group:'Fetal Medicine',name:'Management of sensitized Rh/Kell'},
+  {id:'obs_039',cat:'obs',group:'Medical – Autoimmune',name:'Rheumatoid Arthritis in pregnancy'},
+  {id:'obs_040',cat:'obs',group:'Medical – Autoimmune',name:'SLE and APS in pregnancy'},
+  {id:'obs_041',cat:'obs',group:'Medical – Cardiac',name:'Aortic valvular disease / AS'},
+  {id:'obs_042',cat:'obs',group:'Medical – Cardiac',name:'Mitral valvular disease'},
+  {id:'obs_043',cat:'obs',group:'Medical – Cardiac',name:'Cardiomyopathy in pregnancy'},
+  {id:'obs_044',cat:'obs',group:'Medical – Cardiac',name:'Congenital Heart Diseases'},
+  {id:'obs_045',cat:'obs',group:'Medical – Cardiac',name:'Ischaemic Heart Disease (IHD)'},
+  {id:'obs_046',cat:'obs',group:'Medical – Cardiac',name:'Marfan syndrome in pregnancy'},
+  {id:'obs_047',cat:'obs',group:'Medical – Dermatology',name:'Skin eruptions in pregnancy'},
+  {id:'obs_048',cat:'obs',group:'Medical – Endocrine',name:'Diabetes in pregnancy (GDM & pre-existing)'},
+  {id:'obs_049',cat:'obs',group:'Medical – Endocrine',name:'Thyroid disorders in pregnancy'},
+  {id:'obs_050',cat:'obs',group:'Medical – Endocrine',name:'Prolactinoma in pregnancy'},
+  {id:'obs_051',cat:'obs',group:'Medical – Gastrointestinal',name:'Abdominal pain in pregnancy'},
+  {id:'obs_052',cat:'obs',group:'Medical – Gastrointestinal',name:'Constipation in pregnancy'},
+  {id:'obs_053',cat:'obs',group:'Medical – Gastrointestinal',name:'Appendicitis in pregnancy'},
+  {id:'obs_054',cat:'obs',group:'Medical – Gastrointestinal',name:'Inflammatory Bowel Disease (IBD)'},
+  {id:'obs_055',cat:'obs',group:'Medical – Haematology',name:'Anaemia in pregnancy'},
+  {id:'obs_056',cat:'obs',group:'Medical – Haematology',name:'Blood transfusion in pregnancy'},
+  {id:'obs_057',cat:'obs',group:'Medical – Haematology',name:'Thrombocytopenia in pregnancy'},
+  {id:'obs_058',cat:'obs',group:'Medical – Haematology',name:'Haemophilia and vWD'},
+  {id:'obs_059',cat:'obs',group:'Medical – Haematology',name:'VTE – Risk reduction'},
+  {id:'obs_060',cat:'obs',group:'Medical – Haematology',name:'VTE – Acute management'},
+  {id:'obs_061',cat:'obs',group:'Medical – Haematology',name:'Sickle cell disease in pregnancy'},
+  {id:'obs_062',cat:'obs',group:'Medical – Haematology',name:'Thalassaemia in pregnancy'},
+  {id:'obs_063',cat:'obs',group:'Medical – Hypertension',name:'Hypertension in pregnancy (PE, PIH)'},
+  {id:'obs_064',cat:'obs',group:'Medical – Hypertension',name:'HELLP syndrome'},
+  {id:'obs_065',cat:'obs',group:'Medical – Infection',name:'COVID-19 in pregnancy'},
+  {id:'obs_066',cat:'obs',group:'Medical – Infection',name:'Group B Streptococcus (GBS)'},
+  {id:'obs_067',cat:'obs',group:'Medical – Infection',name:'Chickenpox (VZV) in pregnancy'},
+  {id:'obs_068',cat:'obs',group:'Medical – Infection',name:'CMV in pregnancy'},
+  {id:'obs_069',cat:'obs',group:'Medical – Infection',name:'Hepatitis B & C in pregnancy'},
+  {id:'obs_070',cat:'obs',group:'Medical – Infection',name:'Rubella in pregnancy'},
+  {id:'obs_071',cat:'obs',group:'Medical – Infection',name:'HSV in pregnancy'},
+  {id:'obs_072',cat:'obs',group:'Medical – Infection',name:'HIV in pregnancy (BHIVA)'},
+  {id:'obs_073',cat:'obs',group:'Medical – Infection',name:'Syphilis in pregnancy'},
+  {id:'obs_074',cat:'obs',group:'Medical – Infection',name:'Bacterial sepsis in pregnancy'},
+  {id:'obs_075',cat:'obs',group:'Medical – Infection',name:'Puerperal sepsis'},
+  {id:'obs_076',cat:'obs',group:'Medical – Liver',name:'Acute Fatty Liver of Pregnancy (AFLP)'},
+  {id:'obs_077',cat:'obs',group:'Medical – Liver',name:'Intrahepatic Cholestasis of Pregnancy (ICP)'},
+  {id:'obs_078',cat:'obs',group:'Medical – Neurology',name:'Epilepsy in pregnancy'},
+  {id:'obs_079',cat:'obs',group:'Medical – Neurology',name:'Headache & Migraine in pregnancy'},
+  {id:'obs_080',cat:'obs',group:'Medical – Neurology',name:'Stroke in pregnancy'},
+  {id:'obs_081',cat:'obs',group:'Perinatal Mental Health',name:'Mental health in pregnancy'},
+  {id:'obs_082',cat:'obs',group:'Perinatal Mental Health',name:'Postnatal depression / Psychosis'},
+  {id:'obs_083',cat:'obs',group:'Medical – Renal',name:'UTI and Pyelonephritis in pregnancy'},
+  {id:'obs_084',cat:'obs',group:'Medical – Renal',name:'AKI / CKD in pregnancy'},
+  {id:'obs_085',cat:'obs',group:'Medical – Renal',name:'Renal transplant in pregnancy'},
+  {id:'obs_086',cat:'obs',group:'Medical – Respiratory',name:'Asthma in pregnancy (incl. acute severe)'},
+  {id:'obs_087',cat:'obs',group:'Tumours in Pregnancy',name:'Fibroids in pregnancy'},
+  {id:'obs_088',cat:'obs',group:'Tumours in Pregnancy',name:'Breast cancer in pregnancy'},
+  {id:'obs_089',cat:'obs',group:'Tumours in Pregnancy',name:'Ovarian CA / cyst in pregnancy'},
+  {id:'obs_090',cat:'obs',group:'Tumours in Pregnancy',name:'Cervical cancer in pregnancy'},
+  {id:'obs_091',cat:'obs',group:'Tumours in Pregnancy',name:'Lymphomas in pregnancy'},
+  {id:'obs_092',cat:'obs',group:'Obstetric Emergencies',name:'Amniotic Fluid Embolism (AFE)'},
+  {id:'obs_093',cat:'obs',group:'Obstetric Emergencies',name:'Cord prolapse'},
+  {id:'obs_094',cat:'obs',group:'Obstetric Emergencies',name:'Uterine inversion'},
+  {id:'obs_095',cat:'obs',group:'Obstetric Emergencies',name:'Maternal collapse'},
+  {id:'obs_096',cat:'obs',group:'Obstetric Emergencies',name:'Perimortem Caesarean section'},
+  {id:'obs_097',cat:'obs',group:'Obstetric Emergencies',name:'Postpartum Haemorrhage (PPH)'},
+  {id:'obs_098',cat:'obs',group:'Obstetric Emergencies',name:'Shoulder dystocia'},
+  {id:'obs_099',cat:'obs',group:'Obstetric Emergencies',name:'Uterine rupture'},
+  {id:'obs_100',cat:'obs',group:'Obstetric Emergencies',name:'Obstetric hysterectomy'},
+  {id:'obs_101',cat:'obs',group:'Antepartum Haemorrhage',name:'APH – General approach'},
+  {id:'obs_102',cat:'obs',group:'Antepartum Haemorrhage',name:'Placental abruption'},
+  {id:'obs_103',cat:'obs',group:'Antepartum Haemorrhage',name:'Placenta praevia & Vasa praevia'},
+  {id:'obs_104',cat:'obs',group:'Antepartum Haemorrhage',name:'Placenta Accreta Spectrum (PAS)'},
+  {id:'obs_105',cat:'obs',group:'Aberrant Liquor',name:'Polyhydramnios'},
+  {id:'obs_106',cat:'obs',group:'Aberrant Liquor',name:'Oligohydramnios'},
+  {id:'obs_107',cat:'obs',group:'Neonatology',name:'Neonatal resuscitation'},
+  {id:'obs_108',cat:'obs',group:'Neonatology',name:'Neonatal infections'},
+  {id:'obs_109',cat:'obs',group:'Neonatology',name:'Common neonatal problems'},
+  {id:'obs_110',cat:'obs',group:'Neonatology',name:'Common problems in breastfeeding'},
+  {id:'gyn_001',cat:'gyn',group:'Adolescent Gynaecology',name:'Teenage pregnancy'},
+  {id:'gyn_002',cat:'gyn',group:'Adolescent Gynaecology',name:'Adolescent gynaecology (general)'},
+  {id:'gyn_003',cat:'gyn',group:'Abnormal Uterine Bleeding',name:'AUB – General (PALM-COEIN)'},
+  {id:'gyn_004',cat:'gyn',group:'Abnormal Uterine Bleeding',name:'Fibroids (Leiomyoma)'},
+  {id:'gyn_005',cat:'gyn',group:'Abnormal Uterine Bleeding',name:'Adenomyosis'},
+  {id:'gyn_006',cat:'gyn',group:'Abnormal Uterine Bleeding',name:'Endometrial / Uterine polyp'},
+  {id:'gyn_007',cat:'gyn',group:'Abnormal Uterine Bleeding',name:'COEIN – non-structural causes'},
+  {id:'gyn_008',cat:'gyn',group:'Contraception',name:'LARC (IUD, IUS, Implant, Injectable)'},
+  {id:'gyn_009',cat:'gyn',group:'Contraception',name:'Emergency contraception'},
+  {id:'gyn_010',cat:'gyn',group:'Contraception',name:'POP & Injectables'},
+  {id:'gyn_011',cat:'gyn',group:'Contraception',name:'Combined Oral Contraceptive Pill (OCP)'},
+  {id:'gyn_012',cat:'gyn',group:'Contraception',name:'PPIUD and Postpartum contraception'},
+  {id:'gyn_013',cat:'gyn',group:'Contraception',name:'Sterilisation (female & male)'},
+  {id:'gyn_014',cat:'gyn',group:'DSD / Sex Determination',name:'Normal sex determination'},
+  {id:'gyn_015',cat:'gyn',group:'DSD / Sex Determination',name:'Ambiguous genitalia / DSD'},
+  {id:'gyn_016',cat:'gyn',group:'Gynaecological Oncology',name:'Cervical cancer (incl. colposcopy, LLETZ)'},
+  {id:'gyn_017',cat:'gyn',group:'Gynaecological Oncology',name:'Endometrial carcinoma'},
+  {id:'gyn_018',cat:'gyn',group:'Gynaecological Oncology',name:'Ovarian cancer (EOC, borderline, germ cell)'},
+  {id:'gyn_019',cat:'gyn',group:'Gynaecological Oncology',name:'Vulval cancer'},
+  {id:'gyn_020',cat:'gyn',group:'Gynaecological Oncology',name:'GTN (Gestational Trophoblastic Neoplasia)'},
+  {id:'gyn_021',cat:'gyn',group:'Gynaecological Oncology',name:'Cancer genetics (BRCA, Lynch) & BSO'},
+  {id:'gyn_022',cat:'gyn',group:'Menopause',name:'Menopause (physiology, diagnosis, Mx)'},
+  {id:'gyn_023',cat:'gyn',group:'Menopause',name:'HRT (indications, types, risks)'},
+  {id:'gyn_024',cat:'gyn',group:'Menopause',name:'Premature Ovarian Insufficiency (POI)'},
+  {id:'gyn_025',cat:'gyn',group:'Menopause',name:'Osteoporosis'},
+  {id:'gyn_026',cat:'gyn',group:'Menopause',name:'Benign conditions (LS, LP, atrophic vaginitis)'},
+  {id:'gyn_027',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Physiology of menstruation'},
+  {id:'gyn_028',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Puberty, precocious & delayed'},
+  {id:'gyn_029',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Primary amenorrhoea'},
+  {id:'gyn_030',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Secondary amenorrhoea'},
+  {id:'gyn_031',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Steroidogenesis'},
+  {id:'gyn_032',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'PCOS'},
+  {id:'gyn_033',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Hyperprolactinaemia & pituitary adenomas'},
+  {id:'gyn_034',cat:'gyn',group:'Amenorrhoea & Endocrine',name:'Hyperandrogenism (hirsutism & virilism)'},
+  {id:'gyn_035',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Endometriosis'},
+  {id:'gyn_036',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Adenomyosis (pain context)'},
+  {id:'gyn_037',cat:'gyn',group:'Pelvic & Perineal Pain',name:'PID / Tubo-ovarian abscess (TOA)'},
+  {id:'gyn_038',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Premenstrual syndrome (PMS/PMDD)'},
+  {id:'gyn_039',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Bladder pain syndrome'},
+  {id:'gyn_040',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Dysmenorrhoea'},
+  {id:'gyn_041',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Dyspareunia'},
+  {id:'gyn_042',cat:'gyn',group:'Pelvic & Perineal Pain',name:'Vulvodynia'},
+  {id:'gyn_043',cat:'gyn',group:'Subfertility & ART',name:'Female infertility'},
+  {id:'gyn_044',cat:'gyn',group:'Subfertility & ART',name:'Male infertility'},
+  {id:'gyn_045',cat:'gyn',group:'Subfertility & ART',name:'Unexplained subfertility'},
+  {id:'gyn_046',cat:'gyn',group:'Subfertility & ART',name:'ART / IVF'},
+  {id:'gyn_047',cat:'gyn',group:'Subfertility & ART',name:'Ovulation induction & OHSS'},
+  {id:'gyn_048',cat:'gyn',group:'Subfertility & ART',name:'Fertility preservation & surrogacy'},
+  {id:'gyn_049',cat:'gyn',group:'Pelvic Organ Prolapse',name:'POP-Q classification'},
+  {id:'gyn_050',cat:'gyn',group:'Pelvic Organ Prolapse',name:'Pelvic organ prolapse (management)'},
+  {id:'gyn_051',cat:'gyn',group:'Pelvic Organ Prolapse',name:'Vault prolapse'},
+  {id:'gyn_052',cat:'gyn',group:'Pelvic Organ Prolapse',name:'Hypertrophic elongated cervix'},
+  {id:'gyn_053',cat:'gyn',group:'Urogynaecology',name:'Pelvic anatomy & continence physiology'},
+  {id:'gyn_054',cat:'gyn',group:'Urogynaecology',name:'Stress urinary incontinence'},
+  {id:'gyn_055',cat:'gyn',group:'Urogynaecology',name:'Overactive bladder (OAB)'},
+  {id:'gyn_056',cat:'gyn',group:'Urogynaecology',name:'Urodynamics'},
+  {id:'gyn_057',cat:'gyn',group:'Urogynaecology',name:'Genito-urinary fistulae'},
+  {id:'gyn_058',cat:'gyn',group:'Gynaecological Infections',name:'Vulvovaginal candidiasis (VVC)'},
+  {id:'oth_001',cat:'other',group:'Research & Governance',name:'Critical appraisal (EBM)'},
+  {id:'oth_002',cat:'other',group:'Research & Governance',name:'Risk management'},
+  {id:'oth_003',cat:'other',group:'Research & Governance',name:'Audit & quality improvement'},
+  {id:'oth_004',cat:'other',group:'Research & Governance',name:'Valid consent'},
+  {id:'oth_005',cat:'other',group:'Research & Governance',name:'Clinical governance pillars'},
+  {id:'oth_006',cat:'other',group:'Research & Governance',name:'Maternity dashboard'},
+  {id:'oth_007',cat:'other',group:'Safeguarding & Ethics',name:'Domestic violence / IPV'},
+  {id:'oth_008',cat:'other',group:'Safeguarding & Ethics',name:'SDGs & Millennium development goals'},
+  {id:'oth_009',cat:'other',group:'Safeguarding & Ethics',name:'Sexual assault and rape'},
+  {id:'oth_010',cat:'other',group:'Safeguarding & Ethics',name:'Female genital mutilation (FGM)'},
+  {id:'oth_011',cat:'other',group:'Surgical Skills',name:'Surgical procedures (gynaecological)'},
+  {id:'oth_012',cat:'other',group:'Surgical Skills',name:'Postoperative care & enhanced recovery'},
+  {id:'oth_013',cat:'other',group:'Surgical Skills',name:'Hysteroscopy'},
+  {id:'oth_014',cat:'other',group:'Surgical Skills',name:'Laparoscopy'},
+  {id:'oth_015',cat:'other',group:'Surgical Skills',name:'Colposcopy'},
+  {id:'oth_016',cat:'other',group:'Surgical Skills',name:'Ultrasound in O&G'},
+  {id:'oth_017',cat:'other',group:'Health Policy & Statistics',name:'National & Global Health Policies'},
+  {id:'oth_018',cat:'other',group:'Health Policy & Statistics',name:'Health economics'},
+  {id:'oth_019',cat:'other',group:'Health Policy & Statistics',name:'Health statistics & applications'},
+];
+// ═══════════════════════════════════════════════════════════════
+// SM-2 ALGORITHM
+// ═══════════════════════════════════════════════════════════════
+function sm2(item, quality) {
+  let {repetitions=0,interval=1,easeFactor=2.5} = item;
+  if(quality<3){repetitions=0;interval=1;}
+  else{
+    if(repetitions===0)interval=1;
+    else if(repetitions===1)interval=6;
+    else interval=Math.round(interval*easeFactor);
+    repetitions++;
+    easeFactor=Math.max(1.3,easeFactor+0.1-(5-quality)*(0.08+(5-quality)*0.02));
+  }
+  const next=new Date();next.setDate(next.getDate()+interval);
+  return{repetitions,interval,easeFactor:parseFloat(easeFactor.toFixed(2)),nextReview:next.toISOString().split('T')[0]};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let state={
+  version:APP_VERSION,
+  topicProgress:{},
+  flashcards:[],
+  cardProgress:{},
+  streak:0,lastStudyDate:null,studiedToday:[],
+  customTopics:[],
+  googleUser:null,
+  driveFileId:null,
+  sheetsId:null,
+  lastSync:null,
+};
+let gAccessToken=null;
+let syncTimer=null;
+
+function saveLocal(){
+  try{localStorage.setItem('medrev_v2',JSON.stringify(state));}catch(e){console.warn('localStorage full',e);}
+}
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem('medrev_v2');
+    if(raw){const saved=JSON.parse(raw);state={...state,...saved};migrateLegacy();}
+  }catch(e){console.warn('Load error',e);}
+  checkStreak();
+}
+function migrateLegacy(){
+  // Migrate from v1 (medrev_state) if exists
+  const old=localStorage.getItem('medrev_state');
+  if(old&&!state.migratedV1){
+    try{
+      const o=JSON.parse(old);
+      if(o.topicProgress)state.topicProgress={...o.topicProgress,...state.topicProgress};
+      if(o.flashcards)state.flashcards=[...o.flashcards,...state.flashcards.filter(c=>!o.flashcards.find(x=>x.id===c.id))];
+      if(o.cardProgress)state.cardProgress={...o.cardProgress,...state.cardProgress};
+      if(o.customTopics)state.customTopics=[...o.customTopics,...state.customTopics.filter(t=>!o.customTopics.find(x=>x.id===t.id))];
+      if(o.streak&&!state.streak)state.streak=o.streak;
+      state.migratedV1=true;saveLocal();
+      showToast('✅ Migrated data from v1');
+    }catch(e){}
+  }
+}
+function checkStreak(){
+  const today=todayStr();
+  if(!state.lastStudyDate)return;
+  const last=new Date(state.lastStudyDate);
+  const now=new Date(today);
+  const diff=Math.round((now-last)/86400000);
+  if(diff>1){state.streak=0;state.studiedToday=[];saveLocal();}
+  else if(diff===1){state.studiedToday=[];}
+}
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function allTopics(){return[...DEFAULT_TOPICS,...(state.customTopics||[])];}
+function daysUntilExam(){
+  const exam=new Date(EXAM_DATE);
+  const now=new Date(todayStr());
+  const d=Math.ceil((exam-now)/86400000);
+  return d>0?d+'d':'Exam!';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE OAUTH & DRIVE
+// ═══════════════════════════════════════════════════════════════
+function signInGoogle(){
+  if(GOOGLE_CLIENT_ID==='YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'){
+    showToast('⚠️ Add your Google Client ID – see Settings help');
+    showGoogleSetupHelp();return;
+  }
+  const params=new URLSearchParams({
+    client_id:GOOGLE_CLIENT_ID,redirect_uri:window.location.origin+window.location.pathname,
+    response_type:'token',scope:SCOPES,include_granted_scopes:'true',prompt:'consent'
+  });
+  window.location.href='https://accounts.google.com/o/oauth2/v2/auth?'+params;
+}
+function handleOAuthCallback(){
+  const hash=window.location.hash;
+  if(!hash.includes('access_token'))return;
+  const params=new URLSearchParams(hash.substring(1));
+  gAccessToken=params.get('access_token');
+  if(!gAccessToken)return;
+  window.history.replaceState(null,'',window.location.pathname);
+  fetchGoogleProfile();
+}
+async function fetchGoogleProfile(){
+  try{
+    const r=await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json',{headers:{Authorization:'Bearer '+gAccessToken}});
+    const u=await r.json();
+    state.googleUser={name:u.name,email:u.email,picture:u.picture};
+    saveLocal();updateGoogleUI();
+    await syncAll();
+  }catch(e){showToast('❌ Google sign-in failed');}
+}
+function signOutGoogle(){
+  gAccessToken=null;state.googleUser=null;state.driveFileId=null;state.sheetsId=null;
+  saveLocal();updateGoogleUI();updateSyncStatus('idle');showToast('Signed out');
+}
+function updateGoogleUI(){
+  const u=state.googleUser;
+  if(u&&gAccessToken){
+    document.getElementById('googleSignedOut').style.display='none';
+    document.getElementById('googleSignedIn').style.display='block';
+    document.getElementById('googleName').textContent=u.name||'—';
+    document.getElementById('googleEmail').textContent=u.email||'—';
+    const av=document.getElementById('googleAvatar');
+    if(u.picture){av.src=u.picture;av.style.display='block';}
+    document.getElementById('gdriveSigninBanner').style.display='none';
+  }else{
+    document.getElementById('googleSignedOut').style.display='block';
+    document.getElementById('googleSignedIn').style.display='none';
+    document.getElementById('gdriveSigninBanner').style.display='flex';
+  }
+  if(state.lastSync){
+    const d=new Date(state.lastSync);
+    document.getElementById('lastSyncTime').textContent='Last sync: '+d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  }
+}
+function updateSyncStatus(status,label){
+  ['syncDot','syncDot2'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.className='sync-dot'+(status==='synced'?' synced':status==='syncing'?' syncing':status==='error'?' error':'');
+  });
+  const lbl=label||(status==='synced'?'Synced':status==='syncing'?'Syncing…':status==='error'?'Error':'Offline');
+  ['syncLabel','syncLabel2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=lbl;});
+}
+async function manualSync(){if(gAccessToken)await syncAll();else{showToast('Sign in with Google first');showScreen('settings');}}
+
+// ── DRIVE FILE OPERATIONS ──
+async function driveRequest(url,method,body){
+  const opts={method,headers:{Authorization:'Bearer '+gAccessToken}};
+  if(body instanceof FormData){opts.body=body;}
+  else if(body){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}
+  const r=await fetch(url,opts);
+  if(!r.ok)throw new Error('Drive error: '+r.status);
+  return r.json();
+}
+async function findOrCreateDriveFile(name){
+  const q=encodeURIComponent(`name='${name}' and trashed=false`);
+  const list=await driveRequest(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,'GET');
+  if(list.files&&list.files.length>0)return list.files[0].id;
+  // Create new
+  const meta={name,mimeType:'application/json'};
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',new Blob(['{}'],{type:'application/json'}));
+  const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{
+    method:'POST',headers:{Authorization:'Bearer '+gAccessToken},body:form
+  });
+  const f=await r.json();return f.id;
+}
+async function readDriveFile(fileId){
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:'Bearer '+gAccessToken}});
+  if(!r.ok)return null;
+  return r.json();
+}
+async function writeDriveFile(fileId,data){
+  const form=new FormData();
+  const meta={mimeType:'application/json'};
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`,{
+    method:'PATCH',headers:{Authorization:'Bearer '+gAccessToken},body:form
+  });
+}
+
+// ── MAIN SYNC ──
+async function syncAll(){
+  if(!gAccessToken)return;
+  updateSyncStatus('syncing');showLoading('Syncing with Google Drive…');
+  try{
+    // Get or create main data file
+    if(!state.driveFileId)state.driveFileId=await findOrCreateDriveFile(GDRIVE_FILE_NAME);
+    const remote=await readDriveFile(state.driveFileId);
+    if(remote&&remote.version){
+      // Merge: take newest data for each topic
+      if(remote.topicProgress){
+        Object.entries(remote.topicProgress).forEach(([id,rp])=>{
+          const lp=state.topicProgress[id];
+          if(!lp||(rp.lastStudied&&(!lp.lastStudied||rp.lastStudied>lp.lastStudied)))
+            state.topicProgress[id]=rp;
+        });
+      }
+      if(remote.flashcards){
+        remote.flashcards.forEach(rc=>{
+          if(!state.flashcards.find(lc=>lc.id===rc.id))state.flashcards.push(rc);
+        });
+      }
+      if(remote.cardProgress){
+        Object.entries(remote.cardProgress).forEach(([id,rp])=>{
+          if(!state.cardProgress[id])state.cardProgress[id]=rp;
+        });
+      }
+      if(remote.customTopics){
+        remote.customTopics.forEach(rt=>{
+          if(!state.customTopics.find(lt=>lt.id===rt.id))state.customTopics.push(rt);
+        });
+      }
+      if(remote.streak>state.streak)state.streak=remote.streak;
+    }
+    // Write merged state back
+    const toSave={version:APP_VERSION,topicProgress:state.topicProgress,flashcards:state.flashcards,
+      cardProgress:state.cardProgress,customTopics:state.customTopics,streak:state.streak,
+      lastStudyDate:state.lastStudyDate,lastSync:new Date().toISOString()};
+    await writeDriveFile(state.driveFileId,toSave);
+    // Update Google Sheets
+    await updateGoogleSheets();
+    state.lastSync=new Date().toISOString();
+    saveLocal();updateSyncStatus('synced');
+    document.getElementById('lastSyncTime').textContent='Last sync: just now';
+    refreshCurrentScreen();
+  }catch(e){
+    console.error('Sync error',e);updateSyncStatus('error');showToast('❌ Sync failed – check connection');
+  }finally{hideLoading();}
+}
+
+// ── GOOGLE SHEETS ──
+async function getOrCreateSheet(){
+  if(state.sheetsId){
+    try{
+      await driveRequest(`https://sheets.googleapis.com/v4/spreadsheets/${state.sheetsId}`,'GET');
+      return state.sheetsId;
+    }catch(e){state.sheetsId=null;}
+  }
+  const body={properties:{title:GSHEETS_NAME},sheets:[
+    {properties:{title:'Study Log',index:0}},
+    {properties:{title:'Topic Progress',index:1}},
+    {properties:{title:'SM2 Stats',index:2}}
+  ]};
+  const r=await driveRequest('https://sheets.googleapis.com/v4/spreadsheets','POST',body);
+  state.sheetsId=r.spreadsheetId;saveLocal();return state.sheetsId;
+}
+async function updateGoogleSheets(){
+  if(!gAccessToken)return;
+  try{
+    const sid=await getOrCreateSheet();
+    const today=todayStr();
+    const topics=allTopics();
+    // Sheet 1: Study Log – append today's session
+    const logRow=[[new Date().toISOString(),today,(state.studiedToday||[]).length,state.streak]];
+    await sheetsAppend(sid,'Study Log!A:D',logRow);
+    // Sheet 2: Topic Progress – full overwrite
+    const headers=[['Topic ID','Topic Name','Category','Group','Repetitions','Interval (days)','Ease Factor','Next Review','Last Studied','Status']];
+    const rows=topics.map(t=>{
+      const p=state.topicProgress[t.id];
+      if(!p)return[t.id,t.name,t.cat,t.group,0,0,2.5,'','','New'];
+      const status=!p.nextReview?'New':p.nextReview<=today?'Due':p.repetitions>=5?'Mastered':'Scheduled';
+      return[t.id,t.name,t.cat,t.group,p.repetitions||0,p.interval||0,(p.easeFactor||2.5).toFixed(2),p.nextReview||'',p.lastStudied||'',status];
+    });
+    await sheetsUpdate(sid,'Topic Progress!A1',headers.concat(rows));
+    // Sheet 3: SM2 Stats
+    const studied=topics.filter(t=>state.topicProgress[t.id]);
+    const mastered=studied.filter(t=>state.topicProgress[t.id].repetitions>=5);
+    const due=topics.filter(t=>{const p=state.topicProgress[t.id];return p&&p.nextReview&&p.nextReview<=today;});
+    const statsRows=[
+      ['Metric','Value','Updated'],
+      ['Total Topics',topics.length,today],['Studied',studied.length,today],
+      ['Mastered',mastered.length,today],['Due Today',due.length,today],
+      ['Streak (days)',state.streak,today],['Total Flashcards',state.flashcards.length,today],
+      ['Progress %',Math.round(studied.length/topics.length*100)+'%',today]
+    ];
+    await sheetsUpdate(sid,'SM2 Stats!A1',statsRows);
+  }catch(e){console.warn('Sheets update error',e);}
+}
+async function sheetsAppend(sid,range,values){
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+    method:'POST',headers:{Authorization:'Bearer '+gAccessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({values})
+  });
+}
+async function sheetsUpdate(sid,range,values){
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,{
+    method:'PUT',headers:{Authorization:'Bearer '+gAccessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({values})
+  });
+}
+function openSheets(){
+  if(state.sheetsId)window.open(`https://docs.google.com/spreadsheets/d/${state.sheetsId}`,'_blank');
+  else showToast('Sync first to create your sheet');
+}
+
+// ── IMPORT CARDS FROM DRIVE ──
+async function importCardsFromDrive(){
+  if(!gAccessToken){showToast('Sign in with Google first');showScreen('settings');return;}
+  showLoading('Reading medrev_cards.json from Drive…');
+  try{
+    const fid=await findOrCreateDriveFile(GDRIVE_CARDS_FILE);
+    const data=await readDriveFile(fid);
+    if(!data||!data.cards||!Array.isArray(data.cards)){hideLoading();showToast('⚠️ No cards found in Drive file');return;}
+    let added=0;
+    data.cards.forEach(c=>{
+      if(!c.id||!c.front||!c.back||!c.deck)return;
+      if(!state.flashcards.find(x=>x.id===c.id)){state.flashcards.push(c);added++;}
+    });
+    saveLocal();hideLoading();
+    if(added>0){showToast(`✅ Imported ${added} new flashcards!`);renderFlashDecks();}
+    else showToast('ℹ️ No new cards to import');
+  }catch(e){hideLoading();showToast('❌ Import failed: '+e.message);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLAUDE AI PROMPT GENERATOR
+// ═══════════════════════════════════════════════════════════════
+function getClaudePrompt(){
+  return `---
+🃏 MEDREV FLASHCARD GENERATION (DO NOT SKIP THIS SECTION)
+
+After completing the above study notes, generate exactly 20 high-yield clinical flashcards for PGIM Part 2 O&G exam.
+
+STRICT FORMAT — output only valid JSON, no preamble, no markdown fences:
+
+{
+  "cards": [
+    {
+      "id": "TOPIC_SHORTNAME_001",
+      "deck": "TOPIC_ID_FROM_APP",
+      "deckLabel": "Short Topic Name (max 20 chars)",
+      "front": "Clinical scenario or direct question — PGIM style",
+      "back": "Concise answer with key values, doses, criteria, mnemonics"
+    }
+  ]
+}
+
+RULES FOR CARDS:
+- Focus on clinical decision-making, not pure theory
+- Include drug doses, threshold values, diagnostic criteria
+- Use Sri Lanka/SLCOG context where relevant
+- Include RCOG Green-top guideline numbers where applicable
+- Prioritise: management algorithms, emergency protocols, investigation thresholds
+- Mix question types: "What is first-line?", "At what gestation?", "Define criteria for…", "Next step if…"
+- id format: SHORTNAME_001 to SHORTNAME_020
+- deckLabel: abbreviation of topic (e.g. "PPH", "Pre-eclampsia", "CTG", "PCOS")
+
+Save this JSON to a file named medrev_cards.json in the user's Google Drive (append to existing cards array if file exists).
+---`;
+}
+function copyClaudePrompt(){
+  const prompt=getClaudePrompt();
+  navigator.clipboard.writeText(prompt).then(()=>showToast('✅ Prompt copied!')).catch(()=>{
+    // Fallback
+    const ta=document.createElement('textarea');ta.value=prompt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✅ Prompt copied!');
+  });
+}
+function showPromptHelp(){
+  document.getElementById('promptHelpBox').textContent=getClaudePrompt();
+  openModal('promptHelpModal');
+}
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='home')renderHome();
+  if(name==='topics')renderTopics();
+  if(name==='flash')renderFlashDecks();
+  if(name==='schedule')renderSchedule();
+}
+function refreshCurrentScreen(){
+  const active=document.querySelector('.screen.active');
+  if(!active)return;
+  const id=active.id.replace('screen-','');
+  if(id==='home')renderHome();
+  else if(id==='topics')renderTopics();
+  else if(id==='flash')renderFlashDecks();
+  else if(id==='schedule')renderSchedule();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HOME SCREEN
+// ═══════════════════════════════════════════════════════════════
+function renderHome(){
+  const today=todayStr();const topics=allTopics();
+  let due=0,mastered=0;
+  topics.forEach(t=>{const p=state.topicProgress[t.id];if(!p)return;if(p.nextReview&&p.nextReview<=today)due++;if(p.repetitions>=5)mastered++;});
+  document.getElementById('stat-total').textContent=topics.length;
+  document.getElementById('stat-due').textContent=due;
+  document.getElementById('stat-mastered').textContent=mastered;
+  document.getElementById('stat-cards').textContent=state.flashcards.length;
+  document.getElementById('streakNum').textContent=state.streak||0;
+  document.getElementById('studiedToday').textContent=(state.studiedToday||[]).length;
+  document.getElementById('daysToExam').textContent=daysUntilExam();
+  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  const studied=Object.values(state.topicProgress).filter(p=>p.nextReview).length;
+  const pct=topics.length>0?Math.round(studied/topics.length*100):0;
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressFill').style.width=pct+'%';
+  // Due list
+  const dueTopics=topics.filter(t=>{const p=state.topicProgress[t.id];return p&&p.nextReview&&p.nextReview<=today;})
+    .sort((a,b)=>new Date(state.topicProgress[a.id].nextReview)-new Date(state.topicProgress[b.id].nextReview));
+  const dueList=document.getElementById('dueList');
+  dueList.innerHTML=dueTopics.length===0
+    ?`<div style="text-align:center;padding:32px 20px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:600;color:var(--text2)">All caught up!</div><div style="font-size:12px;color:var(--text3);margin-top:6px">No reviews due. Pick a topic to study.</div></div>`
+    :dueTopics.slice(0,8).map(t=>{
+      const p=state.topicProgress[t.id];const icon=t.cat==='obs'?'🤱':t.cat==='gyn'?'🩺':'📋';
+      const overdue=p.nextReview<today?'<span class="tag tag-due">overdue</span>':'<span class="tag tag-due">today</span>';
+      return`<div class="due-item" onclick="openTopicStart('${t.id}')">
+        <div class="due-item-icon" style="background:var(--surface2)">${icon}</div>
+        <div class="due-item-body">
+          <div class="due-item-title">${t.name}</div>
+          <div class="due-item-sub">${t.group} · ${overdue} · Rep ${p.repetitions}</div>
+        </div>
+        <svg width="14" height="14" fill="none" stroke="var(--text3)" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>`;
+    }).join('');
+  // Upcoming
+  const upcoming=topics.filter(t=>{const p=state.topicProgress[t.id];return p&&p.nextReview&&p.nextReview>today;})
+    .sort((a,b)=>new Date(state.topicProgress[a.id].nextReview)-new Date(state.topicProgress[b.id].nextReview)).slice(0,4);
+  document.getElementById('upcomingList').innerHTML=upcoming.map(t=>{
+    const p=state.topicProgress[t.id];
+    const d=new Date(p.nextReview).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return`<div class="due-item" onclick="openTopicStart('${t.id}')">
+      <div class="due-item-icon" style="background:var(--surface2);font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace">${d}</div>
+      <div class="due-item-body"><div class="due-item-title">${t.name}</div><div class="due-item-sub">${t.group}</div></div>
+    </div>`;
+  }).join('')||'<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center">Study topics to see upcoming reviews</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOPICS SCREEN
+// ═══════════════════════════════════════════════════════════════
+let currentCatFilter='all',currentSearch='';
+function renderTopics(){
+  const topics=allTopics();const today=todayStr();
+  let filtered=topics.filter(t=>{
+    if(currentCatFilter==='obs'&&t.cat!=='obs')return false;
+    if(currentCatFilter==='gyn'&&t.cat!=='gyn')return false;
+    if(currentCatFilter==='other'&&t.cat!=='other')return false;
+    if(currentCatFilter==='due'){const p=state.topicProgress[t.id];if(!p||!p.nextReview||p.nextReview>today)return false;}
+    if(currentCatFilter==='new'&&state.topicProgress[t.id])return false;
+    if(currentSearch){const q=currentSearch.toLowerCase();if(!t.name.toLowerCase().includes(q)&&!t.group.toLowerCase().includes(q))return false;}
+    return true;
+  });
+  const groups={};
+  filtered.forEach(t=>{if(!groups[t.group])groups[t.group]=[];groups[t.group].push(t);});
+  const container=document.getElementById('topicsContainer');
+  if(filtered.length===0){container.innerHTML=`<div style="text-align:center;padding:40px 20px"><div style="font-size:48px">🔍</div><div style="font-size:14px;color:var(--text2);margin-top:12px">No topics found</div></div>`;return;}
+  container.innerHTML=Object.entries(groups).map(([grp,items])=>{
+    const studied=items.filter(t=>state.topicProgress[t.id]).length;
+    return`<div class="topic-group fade-in">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-title"><span>${grp}</span><span class="group-count">${studied}/${items.length}</span></div>
+        <svg class="group-arrow open" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      <div class="topic-list open">${items.map(t=>renderTopicItem(t,today)).join('')}</div>
+    </div>`;
+  }).join('');
+}
+function renderTopicItem(t,today){
+  const p=state.topicProgress[t.id];
+  let checkCls='',checkIcon='',status='',nextInfo='';
+  if(!p){status='<span class="tag tag-new">NEW</span>';}
+  else{
+    const isOverdue=p.nextReview&&p.nextReview<=today;
+    checkCls=isOverdue?'due':'studied';checkIcon=isOverdue?'!':'✓';
+    status=isOverdue?'<span class="tag tag-due">DUE</span>':'<span class="tag tag-done">Rep '+p.repetitions+'</span>';
+    if(p.nextReview){const d=new Date(p.nextReview);nextInfo=d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' · EF:'+p.easeFactor;}
+  }
+  const catTag=t.cat==='obs'?'<span class="tag tag-obs">OBS</span>':t.cat==='gyn'?'<span class="tag tag-gyn">GYN</span>':'<span class="tag tag-other">OTHER</span>';
+  return`<div class="topic-item" onclick="openTopicStart('${t.id}')">
+    <div class="topic-check ${checkCls}">${checkIcon}</div>
+    <div class="topic-body">
+      <div class="topic-name">${t.name}</div>
+      <div class="topic-meta">${catTag}${status}${nextInfo?`<span style="font-size:10px">${nextInfo}</span>`:''}</div>
+    </div>
+  </div>`;
+}
+function toggleGroup(header){
+  const arrow=header.querySelector('.group-arrow');const list=header.nextElementSibling;
+  arrow.classList.toggle('open');list.classList.toggle('open');
+}
+function filterCat(cat,el){
+  currentCatFilter=cat;document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTopics();
+}
+function filterTopics(val){currentSearch=val;renderTopics();}
+
+// ═══════════════════════════════════════════════════════════════
+// TOPIC START & REVIEW
+// ═══════════════════════════════════════════════════════════════
+let currentReviewTopicId=null;
+function openTopicStart(id){
+  currentReviewTopicId=id;const t=allTopics().find(x=>x.id===id);const p=state.topicProgress[id];const today=todayStr();
+  document.getElementById('topicStartTitle').textContent=t.name;
+  document.getElementById('topicStartSub').textContent=t.group+(p&&p.nextReview&&p.nextReview<=today?' · ⚠️ Due for review':'');
+  let meta='';
+  if(p){meta=`<div class="card-sm"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+    <div><div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace">${p.repetitions}</div><div style="font-size:10px;color:var(--text3)">REPS</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:var(--accent2);font-family:'JetBrains Mono',monospace">${p.interval}d</div><div style="font-size:10px;color:var(--text3)">INTERVAL</div></div>
+    <div><div style="font-size:20px;font-weight:700;color:var(--accent4);font-family:'JetBrains Mono',monospace">${p.easeFactor}</div><div style="font-size:10px;color:var(--text3)">EF</div></div>
+  </div>${p.nextReview?`<div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center">Next: ${new Date(p.nextReview).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>`:''}</div>`;}
+  document.getElementById('topicStartMeta').innerHTML=meta;
+  document.getElementById('topicStartStudied').onclick=()=>{closeModal('topicStartModal');openTopicReview(id);};
+  openModal('topicStartModal');
+}
+function openTopicReview(id){
+  currentReviewTopicId=id;const t=allTopics().find(x=>x.id===id);
+  document.getElementById('reviewModalTitle').textContent=t.name;
+  document.getElementById('reviewModalSub').textContent='Rate your recall quality (SM-2 algorithm)';
+  const qualities=[{q:0,label:'Blackout',desc:'No recall',cls:'q0'},{q:1,label:'Wrong',desc:'Familiar but wrong',cls:'q1'},
+    {q:2,label:'Hard miss',desc:'Wrong but easy',cls:'q2'},{q:3,label:'Correct hard',desc:'Correct w/ difficulty',cls:'q3'},
+    {q:4,label:'Correct',desc:'After hesitation',cls:'q4'},{q:5,label:'Perfect',desc:'Instant recall',cls:'q5'}];
+  document.getElementById('qualityGrid').innerHTML=qualities.map(q=>`<div class="quality-card ${q.cls}" onclick="recordReview(${q.q})">
+    <div class="q-score">${q.q}</div><div class="q-label">${q.label}</div><div class="q-desc">${q.desc}</div></div>`).join('');
+  openModal('reviewModal');
+}
+function recordReview(quality){
+  const id=currentReviewTopicId;const existing=state.topicProgress[id]||{};
+  const updated=sm2(existing,quality);
+  state.topicProgress[id]={...existing,...updated,lastStudied:todayStr()};
+  const today=todayStr();
+  if(state.lastStudyDate!==today){
+    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);const yStr=yesterday.toISOString().split('T')[0];
+    state.streak=(state.lastStudyDate===yStr)?(state.streak||0)+1:1;
+    state.studiedToday=[];
+  }
+  state.lastStudyDate=today;
+  if(!(state.studiedToday||[]).includes(id))state.studiedToday=[...(state.studiedToday||[]),id];
+  saveLocal();closeModal('reviewModal');
+  const next=new Date(updated.nextReview).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  showToast(`✅ Next review: ${next} (${updated.interval}d)`);
+  scheduleNotif(id,updated.nextReview);
+  // Auto-sync after review
+  if(gAccessToken){clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncAll(),3000);}
+  renderHome();if(document.getElementById('screen-topics').classList.contains('active'))renderTopics();
+}
+function showAddTopicModal(){openModal('addTopicModal');}
+function saveNewTopic(){
+  const name=document.getElementById('newTopicName').value.trim();
+  const cat=document.getElementById('newTopicCat').value;
+  const group=document.getElementById('newTopicGroup').value.trim()||'Custom';
+  if(!name){showToast('⚠️ Enter a topic name');return;}
+  const id='custom_'+Date.now();
+  state.customTopics=[...(state.customTopics||[]),{id,cat,group,name}];
+  saveLocal();closeModal('addTopicModal');
+  document.getElementById('newTopicName').value='';document.getElementById('newTopicGroup').value='';
+  renderTopics();showToast('✅ Topic added');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FLASHCARDS
+// ═══════════════════════════════════════════════════════════════
+let fcQueue=[],fcIndex=0,fcFlipped=false,currentDeckCat='all';
+function filterDeckCat(cat,el){
+  currentDeckCat=cat;document.querySelectorAll('#deckCatTabs .cat-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderFlashDecks();
+}
+function renderFlashDecks(){
+  document.getElementById('flashDeckView').style.display='block';
+  document.getElementById('flashStudyView').style.display='none';
+  document.getElementById('flashAddView').style.display='none';
+  document.getElementById('claudePromptBox').textContent=getClaudePrompt();
+  const today=todayStr();
+  // Group cards by deckLabel (subgroup) then by topic category
+  const deckMap={};
+  state.flashcards.forEach(c=>{
+    const key=c.deckLabel||c.deck;
+    if(!deckMap[key])deckMap[key]={label:c.deckLabel||c.deck,topicId:c.deck,cards:[]};
+    deckMap[key].cards.push(c);
+  });
+  const deckEl=document.getElementById('deckList');
+  if(Object.keys(deckMap).length===0){
+    deckEl.innerHTML=`<div style="text-align:center;padding:32px 20px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border)">
+      <div style="font-size:48px;margin-bottom:12px">🃏</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:8px">No flashcards yet</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6">Use the Claude AI prompt below to generate PGIM-focused cards automatically, or tap + Card to add manually.</div>
+    </div>`;return;
+  }
+  // Filter by cat
+  const allT=allTopics();
+  const filtered=Object.entries(deckMap).filter(([key,deck])=>{
+    if(currentDeckCat==='all')return true;
+    const t=allT.find(x=>x.id===deck.topicId);
+    if(!t)return currentDeckCat==='other';
+    if(currentDeckCat==='due'){const due=deck.cards.filter(c=>{const p=state.cardProgress[c.id];return!p||!p.nextReview||p.nextReview<=today;});return due.length>0;}
+    return t.cat===currentDeckCat;
+  });
+  // Group by category
+  const catGroups={obs:[],gyn:[],other:[]};
+  filtered.forEach(([key,deck])=>{
+    const t=allT.find(x=>x.id===deck.topicId);
+    const cat=t?t.cat:'other';
+    catGroups[cat].push([key,deck]);
+  });
+  let html='';
+  const catLabels={obs:'Obstetrics',gyn:'Gynaecology',other:'Other / Governance'};
+  const catColors={obs:'var(--accent)',gyn:'var(--accent2)',other:'var(--accent4)'};
+  Object.entries(catGroups).forEach(([cat,decks])=>{
+    if(decks.length===0)return;
+    html+=`<div class="deck-group-header" style="color:${catColors[cat]}">${catLabels[cat]} <span style="color:var(--text3)">${decks.length}</span></div>`;
+    html+=decks.map(([key,deck])=>{
+      const dueCards=deck.cards.filter(c=>{const p=state.cardProgress[c.id];return!p||!p.nextReview||p.nextReview<=today;});
+      const learned=deck.cards.filter(c=>state.cardProgress[c.id]).length;
+      const pct=deck.cards.length>0?Math.round(learned/deck.cards.length*100):0;
+      const catTagCls=cat==='obs'?'tag-obs':cat==='gyn'?'tag-gyn':'tag-other';
+      return`<div class="deck-card" onclick="startFlashStudy('${deck.topicId}','${key}')">
+        <div class="deck-card-header">
+          <div class="deck-name">${deck.label}</div>
+          ${dueCards.length>0?`<span class="tag tag-due">${dueCards.length} due</span>`:`<span class="tag ${catTagCls}">${pct}%</span>`}
+        </div>
+        <div style="margin-top:8px"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+        <div class="deck-meta">
+          <div class="deck-stat">Total: <span>${deck.cards.length}</span></div>
+          <div class="deck-stat">Due: <span style="color:var(--accent3)">${dueCards.length}</span></div>
+          <div class="deck-stat">Learned: <span style="color:var(--accent2)">${learned}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+  });
+  deckEl.innerHTML=html;
+}
+function startFlashStudy(topicId,deckLabel){
+  const today=todayStr();
+  const cards=state.flashcards.filter(c=>(c.deckLabel||c.deck)===deckLabel);
+  const due=cards.filter(c=>{const p=state.cardProgress[c.id];return!p||!p.nextReview||p.nextReview<=today;});
+  fcQueue=due.length>0?due:cards;fcIndex=0;fcFlipped=false;
+  document.getElementById('fcDeckTitle').textContent=deckLabel;
+  document.getElementById('flashDeckView').style.display='none';
+  document.getElementById('flashStudyView').style.display='block';
+  showFlashCard();
+}
+function showFlashCard(){
+  if(fcIndex>=fcQueue.length){
+    document.getElementById('fcFront').textContent='🎉 Session complete!';
+    document.getElementById('fcBack').textContent='Reviewed '+fcQueue.length+' cards';
+    document.getElementById('flashcard').classList.remove('flipped');
+    document.getElementById('fcRatingWrap').style.display='none';
+    document.getElementById('fcFlipHint').style.display='none';
+    document.getElementById('fcProgress').style.width='100%';
+    document.getElementById('fcCounter').textContent=fcQueue.length+'/'+fcQueue.length;
+    return;
+  }
+  const card=fcQueue[fcIndex];
+  document.getElementById('fcFront').textContent=card.front;
+  document.getElementById('fcBack').textContent=card.back;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('fcRatingWrap').style.display='none';
+  document.getElementById('fcFlipHint').style.display='block';
+  document.getElementById('fcCounter').textContent=(fcIndex+1)+'/'+fcQueue.length;
+  document.getElementById('fcProgress').style.width=Math.round(fcIndex/fcQueue.length*100)+'%';
+  fcFlipped=false;
+}
+function flipCard(){
+  if(fcIndex>=fcQueue.length)return;
+  document.getElementById('flashcard').classList.toggle('flipped');
+  fcFlipped=!fcFlipped;
+  document.getElementById('fcRatingWrap').style.display=fcFlipped?'block':'none';
+  document.getElementById('fcFlipHint').style.display=fcFlipped?'none':'block';
+}
+function rateCard(quality){
+  const card=fcQueue[fcIndex];const existing=state.cardProgress[card.id]||{};
+  const q5=Math.round(quality*5/3);
+  state.cardProgress[card.id]={...existing,...sm2(existing,q5)};
+  saveLocal();fcIndex++;showFlashCard();
+}
+function exitFlashStudy(){renderFlashDecks();}
+function showAddCardView(){
+  document.getElementById('flashDeckView').style.display='none';
+  document.getElementById('flashStudyView').style.display='none';
+  document.getElementById('flashAddView').style.display='block';
+  const sel=document.getElementById('newCardDeck');
+  sel.innerHTML=allTopics().map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+}
+function exitAddCard(){renderFlashDecks();}
+function saveNewCard(){
+  const deck=document.getElementById('newCardDeck').value;
+  const front=document.getElementById('newCardFront').value.trim();
+  const back=document.getElementById('newCardBack').value.trim();
+  if(!front||!back){showToast('⚠️ Enter both question and answer');return;}
+  const t=allTopics().find(x=>x.id===deck);
+  const deckLabel=t?t.name.substring(0,20):deck;
+  const id='card_'+Date.now();
+  state.flashcards.push({id,deck,deckLabel,front,back});
+  document.getElementById('newCardFront').value='';document.getElementById('newCardBack').value='';
+  saveLocal();showToast('✅ Card saved!');renderFlashDecks();
+  if(gAccessToken){clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncAll(),3000);}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCHEDULE
+// ═══════════════════════════════════════════════════════════════
+function renderSchedule(){
+  const topics=allTopics();const today=todayStr();
+  const days={};
+  topics.forEach(t=>{const p=state.topicProgress[t.id];if(!p||!p.nextReview)return;const d=p.nextReview;if(!days[d])days[d]=[];days[d].push(t);});
+  const container=document.getElementById('scheduleContainer');
+  const sortedDays=Object.keys(days).sort();
+  if(sortedDays.length===0){container.innerHTML=`<div style="text-align:center;padding:60px 20px"><div style="font-size:64px">📅</div><div style="font-size:14px;font-weight:600;color:var(--text2);margin-top:16px">No scheduled reviews</div><div style="font-size:12px;color:var(--text3);margin-top:8px">Study topics to build your review calendar</div></div>`;return;}
+  container.innerHTML=sortedDays.slice(0,45).map(day=>{
+    const items=days[day];const d=new Date(day);const isToday=day===today;const isPast=day<today;
+    const dLabel=isToday?'📌 TODAY':isPast?'⚠️ OVERDUE – '+d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    return`<div class="schedule-day">
+      <div class="schedule-day-label" style="color:${isToday||isPast?'var(--accent3)':'var(--text3)'}">${dLabel} (${items.length})</div>
+      ${items.map(t=>{const p=state.topicProgress[t.id];const dotColor=t.cat==='obs'?'var(--accent)':t.cat==='gyn'?'var(--accent2)':'var(--accent4)';
+        return`<div class="sched-item" onclick="openTopicReview('${t.id}')">
+          <div class="sched-dot" style="background:${dotColor}"></div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${t.group} · Rep ${p?.repetitions||0} · EF ${p?.easeFactor||2.5}</div></div>
+          <svg width="14" height="14" fill="none" stroke="var(--text3)" stroke-width="2" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>`;}).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ═══════════════════════════════════════════════════════════════
+function exportData(){
+  const data=JSON.stringify({...state,exportedAt:new Date().toISOString(),appVersion:APP_VERSION},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='medrev_backup_'+todayStr()+'.json';a.click();
+  showToast('✅ Backup downloaded');
+}
+function importData(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(imported.topicProgress)state.topicProgress={...imported.topicProgress,...state.topicProgress};
+      if(imported.flashcards){imported.flashcards.forEach(c=>{if(!state.flashcards.find(x=>x.id===c.id))state.flashcards.push(c);});}
+      if(imported.cardProgress)state.cardProgress={...imported.cardProgress,...state.cardProgress};
+      if(imported.customTopics){imported.customTopics.forEach(t=>{if(!state.customTopics.find(x=>x.id===t.id))state.customTopics.push(t);});}
+      if(imported.streak>state.streak)state.streak=imported.streak;
+      saveLocal();refreshCurrentScreen();showToast('✅ Data imported successfully!');
+    }catch(err){showToast('❌ Invalid backup file');}
+  };reader.readAsText(file);
+  event.target.value='';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+function requestNotifPermission(){
+  if('Notification' in window){
+    Notification.requestPermission().then(perm=>{
+      if(perm==='granted'){document.getElementById('notifBanner').style.display='none';showToast('🔔 Notifications enabled!');}
+    });
+  }
+}
+function scheduleNotif(topicId,dateStr){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const pending=JSON.parse(localStorage.getItem('medrev_notifs')||'[]').filter(n=>n.topicId!==topicId);
+  pending.push({topicId,dateStr});localStorage.setItem('medrev_notifs',JSON.stringify(pending));
+}
+function checkDueNotifs(){
+  if(Notification.permission!=='granted')return;
+  const today=todayStr();
+  const due=allTopics().filter(t=>{const p=state.topicProgress[t.id];return p&&p.nextReview&&p.nextReview<=today;});
+  if(due.length>0&&'serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(reg=>{
+      reg.showNotification('MedRev – Review Due',{body:`${due.length} topic${due.length>1?'s':''} need review today`,icon:'',tag:'daily-review'});
+    }).catch(()=>{});
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE SETUP HELP
+// ═══════════════════════════════════════════════════════════════
+function showGoogleSetupHelp(){
+  showToast('See Settings → Google Account for setup instructions');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODAL & UI HELPERS
+// ═══════════════════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(el=>{el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open');});});
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function showLoading(msg){
+  document.getElementById('loadingText').textContent=msg||'Loading…';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('show');}
+
+// ═══════════════════════════════════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('medrev-sw.js').catch(()=>{});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function init(){
+  loadLocal();
+  handleOAuthCallback();
+  renderHome();
+  updateGoogleUI();
+  updateSyncStatus(gAccessToken?'synced':'idle');
+  if('Notification' in window&&Notification.permission!=='granted'&&Notification.permission!=='denied'){
+    document.getElementById('notifBanner').style.display='flex';
+  }
+  if(Notification.permission==='granted')checkDueNotifs();
+  // Auto-sync every 5 min if signed in
+  setInterval(()=>{if(gAccessToken)syncAll();},300000);
+  // Refresh home every minute
+  setInterval(()=>{if(document.getElementById('screen-home').classList.contains('active'))renderHome();},60000);
+}
+init();
+</script>
+</body>
+</html>
